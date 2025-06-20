@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "warm": "ts-node fetchAllSlug.ts"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

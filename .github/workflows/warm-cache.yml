@@ -1,0 +1,25 @@
+name: 🔥 Warm Cloudflare Cache
+
+on:
+  schedule:
+    - cron: "17 8 * * *" # Chạy lúc 08:15 UTC = 15:15 giờ VN
+  workflow_dispatch: # Cho phép chạy tay từ UI
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v4
+
+      - name: 🛠 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: 🚀 Run warmCache script
+        run: npx ts-node fetchAllSlug.ts
