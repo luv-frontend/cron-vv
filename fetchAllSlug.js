@@ -1,23 +1,23 @@
-import fetch from "node-fetch";
+const fetch = require("node-fetch");
 
 const API_BASE = "https://phimapi.com/danh-sach/phim-moi-cap-nhat-v2";
 const YOUR_SITE = "https://phimvivu.net/phim/";
 
-async function getTotalPage(): Promise<number> {
+async function getTotalPage() {
   const res = await fetch(`${API_BASE}?limit=64`);
-  const data = (await res.json()) as any;
+  const data = await res.json();
   return data?.pagination?.totalPages ?? 0;
 }
-async function getSlugsFromPage(page: number): Promise<string[]> {
+
+async function getSlugsFromPage(page) {
   const res = await fetch(`${API_BASE}?page=${page}&limit=64`);
-  const data = (await res.json()) as any;
+  const data = await res.json();
   const movies = data?.items || [];
   if (movies.length === 0) return [];
-
-  return movies.map((movie: any) => movie.slug);
+  return movies.map((movie) => movie.slug);
 }
 
-async function warmCacheForSlug(slug: string) {
+async function warmCacheForSlug(slug) {
   const res = await fetch(`${YOUR_SITE}${slug}`, {
     method: "GET",
     headers: {
@@ -54,7 +54,7 @@ const summary = {
             else if (status === "MISS") summary.miss++;
             else if (status === "EXPIRED") summary.expired++;
             else if (status === "STALE") summary.stale++;
-            else summary.miss++; // default fall back
+            else summary.miss++; // default fallback
           } catch (err) {
             summary.error++;
             console.error(`❌ Error slug ${slug}:`, err);

@@ -2,12 +2,11 @@
   "scripts": {
     "warm": "ts-node fetchAllSlug.ts"
   },
-  "type": "module",
-  "dependencies": {
-    "node-fetch": "^3.3.2"
-  },
   "devDependencies": {
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
   }
 }
