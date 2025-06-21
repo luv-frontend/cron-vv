@@ -1,7 +1,7 @@
 const fetch = require("node-fetch");
 
 const API_BASE = "https://phimapi.com/danh-sach/phim-moi-cap-nhat-v2";
-const YOUR_SITE = "https://phimvivu.net/phim/";
+const SITES = ["https://phimvivu.net/phim/", "https://phimvivu.net/xem-phim/"];
 
 async function getTotalPage() {
   const res = await fetch(`${API_BASE}?limit=64`);
@@ -9,30 +9,50 @@ async function getTotalPage() {
   return data?.pagination?.totalPages ?? 0;
 }
 
-async function getSlugsFromPage(page) {
+async function getMovieFromPage(page) {
   const res = await fetch(`${API_BASE}?page=${page}&limit=64`);
   const data = await res.json();
-  const movies = data?.items || [];
-  if (movies.length === 0) return [];
-  return movies.map((movie) => movie.slug);
+  return data?.items || [];
 }
 
-async function warmCacheForSlug(slug) {
-  const res = await fetch(`${YOUR_SITE}${slug}`, {
-    method: "GET",
-    headers: {
-      "User-Agent": "CacheWarmerBot/1.0",
-    },
-  });
-  return res.headers.get("cf-cache-status");
+async function warmCacheForMovie(movie) {
+  const results = await Promise.allSettled(
+    SITES.map((base, index) =>
+      fetch(
+        `${base}${movie.slug}${
+          index === 1
+            ? `vietsub/${
+                movie.episode_current?.toLowerCase() === "full"
+                  ? "full"
+                  : "tap-01"
+              }/`
+            : ""
+        }`,
+        {
+          method: "GET",
+          headers: {
+            "User-Agent": "CacheWarmerBot/1.0",
+          },
+        }
+      )
+    )
+  );
+
+  // Kiểm tra nếu bất kỳ response nào có cf-cache-status = HIT
+  for (const res of results) {
+    if (res.status === "fulfilled") {
+      const status = res.value.headers.get("cf-cache-status");
+      if (status === "HIT") return "HIT";
+    }
+  }
+
+  return "noHit";
 }
 
 const summary = {
   total: 0,
   hit: 0,
-  miss: 0,
-  expired: 0,
-  stale: 0,
+  noHit: 0,
   error: 0,
 };
 
@@ -42,22 +62,18 @@ const summary = {
   for (let page = 1; page <= MAX_PAGE; page++) {
     try {
       console.log(`📄 Fetching page ${page}`);
-      const slugs = await getSlugsFromPage(page);
-      summary.total += slugs.length;
+      const movies = await getMovieFromPage(page);
+      summary.total += movies.length;
 
       await Promise.allSettled(
-        slugs.map(async (slug) => {
+        movies.map(async (movie) => {
           try {
-            const status = await warmCacheForSlug(slug);
-
-            if (status === "HIT") summary.hit++;
-            else if (status === "MISS") summary.miss++;
-            else if (status === "EXPIRED") summary.expired++;
-            else if (status === "STALE") summary.stale++;
-            else summary.miss++; // default fallback
+            const result = await warmCacheForMovie(movie);
+            if (result === "HIT") summary.hit++;
+            else summary.noHit++;
           } catch (err) {
             summary.error++;
-            console.error(`❌ Error slug ${slug}:`, err);
+            console.error(`❌ Error slug ${movie.slug}:`, err);
           }
         })
       );
@@ -65,11 +81,8 @@ const summary = {
       console.log(`\n🎯 Cache Summary`);
       console.log(`Total slugs: ${summary.total}`);
       console.log(`HIT: ${summary.hit}`);
-      console.log(`MISS: ${summary.miss}`);
-      console.log(`EXPIRED: ${summary.expired}`);
-      console.log(`STALE: ${summary.stale}`);
+      console.log(`noHit: ${summary.noHit}`);
       console.log(`Error: ${summary.error}`);
-      await new Promise((r) => setTimeout(r, 500));
     } catch (err) {
       console.error(`❌ Error page ${page}`, err);
     }
