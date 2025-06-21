@@ -17,25 +17,24 @@ async function getMovieFromPage(page) {
 
 async function warmCacheForMovie(movie) {
   const results = await Promise.allSettled(
-    SITES.map((base, index) =>
-      fetch(
-        `${base}${movie.slug}${
-          index === 1
-            ? `vietsub/${
-                movie.episode_current?.toLowerCase() === "full"
-                  ? "full"
-                  : "tap-01"
-              }/`
-            : ""
-        }`,
-        {
-          method: "GET",
-          headers: {
-            "User-Agent": "CacheWarmerBot/1.0",
-          },
-        }
-      )
-    )
+    SITES.map((base, index) => {
+      const url = `${base}${movie.slug}${
+        index === 1
+          ? `/vietsub/${
+              movie.episode_current?.toLowerCase() === "full"
+                ? "full"
+                : "tap-01"
+            }/`
+          : "/"
+      }`;
+      console.log("url", url);
+      return fetch(url, {
+        method: "GET",
+        headers: {
+          "User-Agent": "CacheWarmerBot/1.0",
+        },
+      });
+    })
   );
 
   // Kiểm tra nếu bất kỳ response nào có cf-cache-status = HIT
@@ -83,6 +82,7 @@ const summary = {
       console.log(`HIT: ${summary.hit}`);
       console.log(`noHit: ${summary.noHit}`);
       console.log(`Error: ${summary.error}`);
+      await new Promise((r) => setTimeout(r, 500));
     } catch (err) {
       console.error(`❌ Error page ${page}`, err);
     }
