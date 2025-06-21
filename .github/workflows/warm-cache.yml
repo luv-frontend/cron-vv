@@ -2,7 +2,7 @@ name: 🔥 Warm Cloudflare Cache
 
 on:
   schedule:
-    - cron: "40 9 * * *"
+    - cron: "40 9 * * 1" # Cron vào lúc 16h40 mỗi thứ 2 GTM + 7
   workflow_dispatch: # Cho phép chạy tay từ UI
 
 jobs:
