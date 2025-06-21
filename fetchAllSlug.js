@@ -27,7 +27,7 @@ async function warmCacheForMovie(movie) {
             }/`
           : "/"
       }`;
-      console.log("url", url);
+
       return fetch(url, {
         method: "GET",
         headers: {
